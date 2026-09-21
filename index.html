@@ -53,8 +53,8 @@
     <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-10">
         
         <!-- Top Navigation Bar -->
-        <div class="flex justify-between items-start">
-            <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl">
+        <div class="flex justify-between items-start gap-4">
+            <div class="glass-panel p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl pointer-events-auto">
                 <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-xl">
                     4x4
                 </div>
@@ -64,8 +64,39 @@
                 </div>
             </div>
 
+            <!-- Settings Bar Container -->
+            <div class="glass-panel p-4 rounded-2xl text-white min-w-[260px] pointer-events-auto space-y-3">
+                <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Simulation Settings</span>
+                </div>
+                
+                <!-- Ute Color Picker -->
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-300">Spawn Color:</span>
+                    <input type="color" id="setting-color" value="#dedcd8" class="w-8 h-6 bg-transparent rounded cursor-pointer border border-white/20">
+                </div>
+
+                <!-- Fall Damage Toggle -->
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-300">Fall Damage:</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="setting-falldamage" checked class="sr-only peer">
+                        <div class="w-8 h-4 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+                    </label>
+                </div>
+
+                <!-- Crash Physics Mode -->
+                <div class="flex flex-col gap-1 text-xs">
+                    <span class="text-gray-300">Crash Mode:</span>
+                    <select id="setting-crashmode" class="bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-xs outline-none focus:border-amber-500">
+                        <option value="softbody">Soft Body (Deformation)</option>
+                        <option value="shatter">Parts Smash Apart</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Vehicle Integrity Schematic -->
-            <div class="glass-panel p-4 rounded-2xl text-white min-w-[240px]">
+            <div class="glass-panel p-4 rounded-2xl text-white min-w-[240px] pointer-events-auto">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Chassis Structural Integrity</span>
                     <span id="health-pct" class="text-lg font-bold font-teko leading-none text-emerald-400">100%</span>
@@ -98,7 +129,7 @@
         <!-- Bottom Controls & Telemetry Corner HUD -->
         <div class="flex justify-between items-end">
             <!-- Telemetry & Interaction Hint -->
-            <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-3 pointer-events-auto">
                 <div class="glass-panel px-5 py-3 rounded-2xl flex items-center gap-5 border-amber-500/40 w-fit">
                     <div class="text-center">
                         <span id="parts-detached-display" class="text-2xl font-bold font-teko text-amber-400 leading-none">0 / 21</span>
@@ -165,7 +196,7 @@
         const debrisParticles = [];
         const dustParticles = [];
 
-        let utePaintMat, trayMat, darkPlastMat, chromeMat, glassMat, rubberMat, rimMat, wallMat;
+        let trayMat, darkPlastMat, chromeMat, glassMat, rubberMat, rimMat, wallMat;
         let sunLight;
 
         function initScene() {
@@ -257,17 +288,15 @@
 
             crashWalls = [];
 
-            // Arena Size Configuration (Width, Depth of the enclosed square arena - made much farther apart)
-            const arenaSize = 130; // spans from -65 to +65
+            const arenaSize = 130;
             const wallHeight = 5.0;
             const wallThickness = 1.5;
 
-            // 4 Joined Perimeter Walls: North, South, East, West
             const wallConfigs = [
-                { w: arenaSize, h: wallHeight, d: wallThickness, x: 0, z: arenaSize/2, ry: 0 },         // North Wall
-                { w: arenaSize, h: wallHeight, d: wallThickness, x: 0, z: -arenaSize/2, ry: 0 },        // South Wall
-                { w: arenaSize, h: wallHeight, d: wallThickness, x: arenaSize/2, z: 0, ry: Math.PI/2 }, // East Wall
-                { w: arenaSize, h: wallHeight, d: wallThickness, x: -arenaSize/2, z: 0, ry: Math.PI/2 } // West Wall
+                { w: arenaSize, h: wallHeight, d: wallThickness, x: 0, z: arenaSize/2, ry: 0 },
+                { w: arenaSize, h: wallHeight, d: wallThickness, x: 0, z: -arenaSize/2, ry: 0 },
+                { w: arenaSize, h: wallHeight, d: wallThickness, x: arenaSize/2, z: 0, ry: Math.PI/2 },
+                { w: arenaSize, h: wallHeight, d: wallThickness, x: -arenaSize/2, z: 0, ry: Math.PI/2 }
             ];
 
             wallConfigs.forEach(cfg => {
@@ -278,7 +307,6 @@
                 mainMesh.receiveShadow = true;
                 wallGroup.add(mainMesh);
 
-                // Warning stripe accent band
                 const stripeMesh = new THREE.Mesh(new THREE.BoxGeometry(cfg.w + 0.1, 0.8, cfg.d + 0.1), stripeMat);
                 stripeMesh.position.y = cfg.h * 0.65;
                 stripeMesh.castShadow = true;
@@ -295,7 +323,6 @@
         }
 
         function initMaterials() {
-            utePaintMat = new THREE.MeshStandardMaterial({ color: 0xdedcd8, roughness: 0.45, metalness: 0.2 });
             trayMat = new THREE.MeshStandardMaterial({ color: 0x949ca3, roughness: 0.4, metalness: 0.7 });
             darkPlastMat = new THREE.MeshStandardMaterial({ color: 0x1f2124, roughness: 0.85 });
             chromeMat = new THREE.MeshStandardMaterial({ color: 0xdde2e8, roughness: 0.2, metalness: 0.9 });
@@ -305,6 +332,9 @@
         }
 
         function buildCarAt(spawnPos) {
+            const chosenColorHex = document.getElementById('setting-color').value;
+            const utePaintMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(chosenColorHex), roughness: 0.45, metalness: 0.2 });
+
             const car = {
                 position: spawnPos.clone(),
                 velocity: new THREE.Vector3(0, 0, 0),
@@ -804,6 +834,9 @@
                 sunLight.position.x = 130 + Math.sin(elapsedTime * 0.05) * 20;
             }
 
+            const fallDamageEnabled = document.getElementById('setting-falldamage').checked;
+            const crashMode = document.getElementById('setting-crashmode').value;
+
             cars.forEach(car => {
                 if (car.isFlinging) {
                     car.position.addScaledVector(car.velocity, delta);
@@ -817,11 +850,24 @@
                     if (car.position.y <= 0.6) {
                         car.position.y = 0.6;
                         const impactSpeed = car.velocity.length();
-                        applySoftBodyDeformation(car, car.position.clone(), impactSpeed * 1.5);
+                        
+                        if (fallDamageEnabled) {
+                            if (crashMode === 'softbody') {
+                                applySoftBodyDeformation(car, car.position.clone(), impactSpeed * 1.5);
+                            } else {
+                                // Shatter mode: detach multiple parts instantly instead of deforming
+                                car.breakawayParts.forEach(p => {
+                                    if (!p.detached && Math.random() < 0.6) {
+                                        detachPart(car, p, car.velocity.clone().normalize());
+                                    }
+                                });
+                            }
+                        }
+
                         spawnSparks(car.position.x, car.position.y, car.position.z, Math.floor(impactSpeed * 2));
                         spawnDust(car.position.x, car.position.y, car.position.z, 10);
 
-                        if (impactSpeed > 10.0) {
+                        if (fallDamageEnabled && impactSpeed > 10.0 && crashMode === 'softbody') {
                             car.breakawayParts.forEach(p => {
                                 if (!p.detached && Math.random() < 0.25) {
                                     detachPart(car, p, car.velocity.clone().normalize());
@@ -838,7 +884,7 @@
                         }
                     }
 
-                    // Hard Arena Boundary Collision (Wider arena limit)
+                    // Hard Arena Boundary Collision
                     const arenaLimit = 61.5; 
                     let hitWall = false;
                     const impactSpeed = car.velocity.length();
@@ -864,18 +910,29 @@
                     }
 
                     if (hitWall) {
-                        applySoftBodyDeformation(car, car.position.clone(), impactSpeed * 2.0);
+                        if (crashMode === 'softbody') {
+                            applySoftBodyDeformation(car, car.position.clone(), impactSpeed * 2.0);
+                        } else {
+                            car.breakawayParts.forEach(p => {
+                                if (!p.detached && Math.random() < 0.7) {
+                                    detachPart(car, p, car.velocity.clone().normalize());
+                                }
+                            });
+                        }
+
                         spawnSparks(car.position.x, car.position.y + 1.0, car.position.z, 20);
                         spawnDebris(car.position.x, car.position.y + 1.0, car.position.z, 5);
 
                         car.rotationVel.x += (Math.random() - 0.5) * 12;
                         car.rotationVel.z += (Math.random() - 0.5) * 12;
 
-                        car.breakawayParts.forEach(p => {
-                            if (!p.detached && Math.random() < 0.4) {
-                                detachPart(car, p, car.velocity.clone().normalize());
-                            }
-                        });
+                        if (crashMode === 'softbody') {
+                            car.breakawayParts.forEach(p => {
+                                if (!p.detached && Math.random() < 0.4) {
+                                    detachPart(car, p, car.velocity.clone().normalize());
+                                }
+                            });
+                        }
                     }
                 }
 
